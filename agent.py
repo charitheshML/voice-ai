@@ -2,11 +2,17 @@ import sounddevice as sd
 import soundfile as sf
 import requests 
 import os
+import numpy as np
 
 SAMPLE_RATE = 16000
 API_URL = "http://localhost:8000/voice"
 
 os.makedirs("temp", exist_ok=True)
+
+# Fix macOS audio issues
+sd.default.device = None  # Use default device
+sd.default.channels = 1
+sd.default.samplerate = SAMPLE_RATE
 
 print("🎙️  Voice AI Agent - Riya")
 print("=" * 40)
@@ -20,10 +26,13 @@ while True:
     is_recording = True
     
     def record():
-        with sd.InputStream(samplerate=SAMPLE_RATE, channels=1, dtype='float32') as stream:
-            while is_recording:
-                data, _ = stream.read(1024)
-                recording.append(data)
+        try:
+            with sd.InputStream(samplerate=SAMPLE_RATE, channels=1, dtype='float32', blocksize=1024) as stream:
+                while is_recording:
+                    data, _ = stream.read(1024)
+                    recording.append(data)
+        except Exception as e:
+            print(f"Recording error: {e}")
     
     thread = threading.Thread(target=record)
     thread.start()
@@ -33,7 +42,10 @@ while True:
     
     print("⏹️  Recording complete")
 
-    import numpy as np
+    if not recording:
+        print("⚠️  No audio recorded. Try again.")
+        continue
+
     audio = np.concatenate(recording, axis=0)
     sf.write("temp/input.wav", audio, SAMPLE_RATE)
 
@@ -48,9 +60,13 @@ while True:
                 f.write(response.content)
             print("🔊 Playing AI response...")
 
-            audio_out, sr = sf.read("temp/output.wav")
-            sd.play(audio_out, sr)
-            sd.wait()
+            try:
+                audio_out, sr = sf.read("temp/output.wav")
+                sd.play(audio_out, sr, blocking=True)
+                print("✅ Audio playback complete")
+            except Exception as audio_error:
+                print(f"Audio playback error: {audio_error}")
+                print("💡 Try: brew install portaudio && pip install --upgrade sounddevice")
         else:
             print(f"❌ Error: {response.status_code} - {response.text}")
     except Exception as e:

@@ -1,0 +1,25 @@
+fastapi
+uvicorn
+python-dotenv
+requests
+sounddevice
+soundfile
+numpy
+SpeechRecognition
+gTTS
+SQLAlchemy
+psycopg2-binary
+pydantic>=2.0
+google-genai
+openai
+langdetect
+
+# Production optimizations
+pytest>=7.0
+APScheduler>=3.10
+
+# LangChain + LangGraph for RAG agent
+langchain>=0.1.0
+langchain-openai>=0.0.5
+langchain-core>=0.1.0
+langgraph>=0.0.20
